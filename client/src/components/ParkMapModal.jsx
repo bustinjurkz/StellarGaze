@@ -12,6 +12,13 @@ import cloudGoodIcon from "./style/Media/cardIcons/cloudGood.svg";
 import lightPolIcon from "./style/Media/cardIcons/lightPol.svg";
 import ReportPark from "./ReportPark";
 import CountUp from "react-countup";
+import ee from "eventemitter3";
+
+const emitter = new ee();
+
+export const closeModalEmitter = msg => {
+	emitter.emit("closeInfoModalEvent", msg);
+};
 
 const modalStyle = {
 	overlay: {
@@ -49,6 +56,10 @@ class ParkMapModal extends Component {
 		this.park = { weather: {} };
 		this.userLocation = {};
 		this.toRemountReviews = false;
+		this.handleCloseInfoModal = () => {};
+		emitter.on("closeInfoModalEvent", () => {
+			this.closeModal();
+		});
 	}
 
 	//means..
@@ -80,7 +91,7 @@ class ParkMapModal extends Component {
 		}
 	}
 
-	openModal = content => {
+	openModal = (content, handleCloseInfoModal) => {
 		if (content === "") {
 			content = "No content.";
 		}
@@ -91,6 +102,7 @@ class ParkMapModal extends Component {
 		this.moonType = content.moonType;
 		console.log(this.park);
 		this.setState({ modalIsOpen: true });
+		this.handleCloseInfoModal = handleCloseInfoModal;
 	};
 
 	afterOpenModal = () => {
@@ -100,7 +112,9 @@ class ParkMapModal extends Component {
 	closeModal = () => {
 		console.log("CLOSE GOT HERE!!!!!!");
 		document.body.style.overflow = "visible";
-		this.setState({ modalIsOpen: false });
+		this.setState({ modalIsOpen: false }, () =>
+			this.handleCloseInfoModal()
+		);
 	};
 
 	refreshModal = () => {
@@ -400,6 +414,10 @@ function Card(props) {
 }
 
 export default ParkMapModal;
+
+ParkMapModal.defaultProps = {
+	handleCloseInfoModal: () => {}
+};
 
 const ModalStyle = styled.div`
 	/* max-height: 100vh;

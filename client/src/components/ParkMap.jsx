@@ -78,7 +78,11 @@ class ParkMap extends Component {
 
 	//Unfortunately, due to the way markers are, opening modal needs to be done from here
 	openModal = content => {
-		this.parkModalChild.current.openModal(content);
+		this.props.handleOpenInfoModal();
+		this.parkModalChild.current.openModal(
+			content,
+			this.props.handleCloseInfoModal
+		);
 	};
 
 	closeModal = () => {

@@ -1,6 +1,6 @@
 //Store parks state and handle display
 import React, { Component } from "react";
-import ParkForm from "./ParkForm";
+import ParkForm, { loadQueryEmitter } from "./ParkForm";
 import ParkTable from "./ParkTable";
 import ParkMap from "./ParkMap";
 import { BrowserRouter as Router, Route } from "react-router-dom";
@@ -15,6 +15,8 @@ import tempIcon from "./style/Media/cardIcons/temperature.svg";
 import { withRouter } from "react-router-dom";
 import TelescopeCircle from "./TelescopeCircle";
 import NoResultsModal from "./NoResultsModal";
+import { closeModalEmitter } from "./ParkMapModal";
+import qs from "qs";
 
 function inRange(x, min, max) {
 	return (x - min) * (x - max) <= 0;
@@ -88,7 +90,8 @@ class BaseParksData extends Component {
 		isFetchingParks: false,
 		hideForm: false,
 		hideMap: true,
-		sortedBy: "dist"
+		sortedBy: "dist",
+		parkInfoModalIsOpen: false
 	};
 	/* Note - park object is:
         {
@@ -109,6 +112,18 @@ class BaseParksData extends Component {
 		// Since they're google map things
 		this.markers = {};
 		this.noParksModalOpen = false;
+	}
+
+	componentDidUpdate() {
+		window.onpopstate = e => {
+			console.log("Back button pressed");
+			if (this.state.parkInfoModalIsOpen) {
+				closeModalEmitter("Any data");
+				this.setState({ parkInfoModalIsOpen: false });
+			} else {
+				loadQueryEmitter();
+			}
+		};
 	}
 
 	handleMapLoaded = googleMapActual => {
@@ -243,6 +258,8 @@ class BaseParksData extends Component {
 							onMapLoaded={this.handleMapLoaded}
 							moonPhase={this.state.moonPhase}
 							moonType={this.state.moonType}
+							handleOpenInfoModal={this.handleOpenInfoModal}
+							handleCloseInfoModal={this.handleCloseInfoModal}
 						/>
 					</animated.div>
 				)}
@@ -293,40 +310,57 @@ class BaseParksData extends Component {
 		this.setState({ parks: parksArray, sortedBy: "score" });
 	};
 
-	renderNoResults = () => {
-		if (
-			!this.state.isFetchingParks
-			// && !this.noParksModalOpen
-		) {
-			if (this.state.parks.length) {
-				if (
-					Math.max(...this.state.parks.map(park => park.score)) < 0.6
-				) {
-					this.noParksModalOpen = true;
-					return (
-						<NoResultsModal
-							noVis={true}
-							moonPhase={this.state.moonPhase}
-							scoreBreakdown={this.state.parks[0].scoreBreakdown}
-							handleCloseNoParksModal={
-								this.handleCloseNoParksModal
-							}
-						/>
-					);
-				} else {
-					return "";
-				}
-			} else {
-				console.log("Drawing noresultsmodal for no parks");
-				this.noParksModalOpen = true;
-				return (
-					<NoResultsModal
-						handleCloseNoParksModal={this.handleCloseNoParksModal}
-					/>
-				);
-			}
-		}
+	handleOpenInfoModal = () => {
+		console.log("Setting modal to OPEN in ParkData");
+		let query = qs.parse(window.location.search, {
+			ignoreQueryPrefix: true
+		});
+		query.modal = true;
+		this.props.history.push("/search?" + qs.stringify(query));
+		this.setState({ parkInfoModalIsOpen: true });
 	};
+
+	handleCloseInfoModal = () => {
+		console.log("Setting modal to CLOSED in ParkData");
+		this.props.history.goBack();
+		this.setState({ parkInfoModalIsOpen: false });
+	};
+
+	// Not needed
+	// renderNoResults = () => {
+	// 	if (
+	// 		!this.state.isFetchingParks
+	// 		// && !this.noParksModalOpen
+	// 	) {
+	// 		if (this.state.parks.length) {
+	// 			if (
+	// 				Math.max(...this.state.parks.map(park => park.score)) < 0.6
+	// 			) {
+	// 				this.noParksModalOpen = true;
+	// 				return (
+	// 					<NoResultsModal
+	// 						noVis={true}
+	// 						moonPhase={this.state.moonPhase}
+	// 						scoreBreakdown={this.state.parks[0].scoreBreakdown}
+	// 						handleCloseNoParksModal={
+	// 							this.handleCloseNoParksModal
+	// 						}
+	// 					/>
+	// 				);
+	// 			} else {
+	// 				return "";
+	// 			}
+	// 		} else {
+	// 			console.log("Drawing noresultsmodal for no parks");
+	// 			this.noParksModalOpen = true;
+	// 			return (
+	// 				<NoResultsModal
+	// 					handleCloseNoParksModal={this.handleCloseNoParksModal}
+	// 				/>
+	// 			);
+	// 		}
+	// 	}
+	// };
 
 	renderResults = () => {
 		return (

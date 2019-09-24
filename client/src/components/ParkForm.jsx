@@ -11,6 +11,13 @@ import styled from "styled-components";
 // import nearMeButton from "./style/Media/round-my_location-24px.svg";
 // import { MuiThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 // import LocationSearchInput from "./LocationSearchInput";
+import ee from "eventemitter3";
+
+const emitter = new ee();
+
+export const loadQueryEmitter = () => {
+	emitter.emit("formLoadQueryEvent");
+};
 
 class BaseParkForm extends Component {
 	state = {
@@ -35,6 +42,9 @@ class BaseParkForm extends Component {
 		this.sliderLight = this.state.reqData.lightpol;
 		this.sliderDist = this.state.reqData.dist;
 		this.autoComplete = false;
+		emitter.on("formLoadQueryEvent", () => {
+			this.loadQuery();
+		});
 	}
 
 	//There are two cases when we would want to load results form url query:
@@ -56,10 +66,10 @@ class BaseParkForm extends Component {
 			this.loadAutoComplete();
 		}
 		//On back button load previous results
-		window.onpopstate = e => {
-			console.log("Back button pressed");
-			this.loadQuery();
-		};
+		// window.onpopstate = e => {
+		// 	console.log("Back button pressed");
+		// 	this.loadQuery();
+		// };
 	}
 
 	//Load query into state
@@ -331,6 +341,7 @@ class BaseParkForm extends Component {
 
 	convertReqToFloat = reqData => {
 		return {
+			...reqData,
 			lat: parseFloat(reqData.lat),
 			lng: parseFloat(reqData.lng),
 			dist: parseFloat(reqData.dist),
